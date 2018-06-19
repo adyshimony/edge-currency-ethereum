@@ -4,17 +4,17 @@
  */
 
 import type { EdgeIo } from 'edge-core-js'
-import { ConnectionFetch } from '../ethTypes.js'
+import { ConnectionFetch } from '../ethTypes'
 import { IndyConnectionFetch } from './indyConnectionFetch'
-import { EtherscanConnectionFetch } from './etherscanConnectionFetch'
+import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
 
 class ConnectionManager implements ConnectionFetch {
   indyConnection: IndyConnectionFetch
-  etherscanConnection: EtherscanConnectionFetch
+  etherscanConnection: ThirdPartyConnectionFetch
 
   constructor (io: EdgeIo) {
     this.indyConnection = new IndyConnectionFetch(io)
-    this.etherscanConnection = new EtherscanConnectionFetch(io)
+    this.etherscanConnection = new ThirdPartyConnectionFetch(io)
   }
 
   async getAddressBalance (address: string): Promise<string> {
@@ -51,6 +51,9 @@ class ConnectionManager implements ConnectionFetch {
       return res
     } catch (error) {
       try {
+        console.log('error indy - move to etherscan')
+        console.log(`error indy: ${error}`)
+
         const res = await this.etherscanConnection.getHighestBlock()
         return res
       } catch (error) {
@@ -73,13 +76,13 @@ class ConnectionManager implements ConnectionFetch {
     }
   }
 
-  async getAddressTxs (address: string): Promise<[]> {
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<[]> {
     try {
-      const res = await this.indyConnection.getAddressTxs(address)
+      const res = await this.indyConnection.getAddressTxs(address, startBlock, endBlock)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getAddressTxs(address)
+        const res = await this.etherscanConnection.getAddressTxs(address, startBlock, endBlock)
         return res
       } catch (error) {
         throw error
@@ -87,13 +90,13 @@ class ConnectionManager implements ConnectionFetch {
     }
   }
 
-  async getTokenTxs (address: string, token: string): Promise<[]> {
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<[]> {
     try {
-      const res = await this.indyConnection.getTokenTxs(address, token)
+      const res = await this.indyConnection.getTokenTxs(address, token, startBlock, endBlock)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getTokenTxs(address, token)
+        const res = await this.etherscanConnection.getTokenTxs(address, token, startBlock, endBlock)
         return res
       } catch (error) {
         throw error

@@ -3,7 +3,7 @@
  * @flow
  */
 import type { EdgeIo } from 'edge-core-js'
-import { ConnectionFetch } from '../ethTypes.js'
+import { ConnectionFetch } from '../ethTypes'
 import { ConnectionUtils } from './connectionUtils'
 
 class IndyConnectionFetch implements ConnectionFetch {
@@ -27,10 +27,11 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async getHighestBlock (): Promise<string> {
-    const url = `/mempool/latest`
-    const highetBlockNumber = await this.connection.indyFetchGet(url)
-    console.log(`Indy highest block: ${highetBlockNumber}`)
-    return highetBlockNumber
+    const url = `/mempool/highest`
+    console.log('Indy getHighestBlock')
+    const highetBlockNumberResult = await this.connection.indyFetchGet(url)
+    console.log(`Indy highest block: ${highetBlockNumberResult.result}`)
+    return highetBlockNumberResult.result
   }
 
   async getPendingTxs (address: string): Promise<[]> {
@@ -40,18 +41,18 @@ class IndyConnectionFetch implements ConnectionFetch {
     return pendingTxs
   }
 
-  async getAddressTxs (address: string): Promise<[]> {
-    const url = `/account/${address}`
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<[]> {
+    const url = `/account/${address}/${startBlock}/${endBlock}`
     const accountTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${accountTxs.length} Txs for account: ${address} `)
-    return accountTxs
+    console.log(`Indy return ${(accountTxs.length ? accountTxs.length : 0)} Txs for account: ${address} `)
+    return accountTxs.result
   }
 
-  async getTokenTxs (address: string, token: string): Promise<[]> {
-    const url = `/tokens/${address}/${token}`
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<[]> {
+    const url = `/tokens/${address}/${token}/${startBlock}/${endBlock}`
     const tokenTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${tokenTxs.length} Txs of token: ${token} for account: ${address} `)
-    return tokenTxs
+    console.log(`Indy return ${(tokenTxs.length ? tokenTxs.length : 0)} Txs of token: ${token} for account: ${address} `)
+    return tokenTxs.result
   }
 
   async getBlockTxs (block: string): Promise<[]> {

@@ -145,7 +145,7 @@ export interface ConnectionFetch {
   // get and address balance on a specific token
   getTokenBalance(address: string, token: string): Promise<string>;
   // get address txs
-  getAddressTxs(address: string): Promise<[]>;
+  getAddressTxs(address: string, startBlock: number, endBlock: number): Promise<[]>;
   // get address token txs
   getTokenTxs(address: string, token: string): Promise<[]>;
   // get txs for a spefic block
