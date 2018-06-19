@@ -312,7 +312,7 @@ class EthereumEngine {
     }
   }
 
-  processEtherscanTokenTransaction (tx: any, currencyCode: string) {
+  processEtherscanTokenTransaction (tx: any, currencyCode: string, connectionType: string) {
     let netNativeAmount:string // Amount received into wallet
     const ourReceiveAddresses:Array<string> = []
 
@@ -321,19 +321,32 @@ class EthereumEngine {
     let fromAddress
     let toAddress
 
-    if (tx.topics[1] === paddedAddress) {
-      netNativeAmount = bns.sub('0', tx.data)
-      fromAddress = this.walletLocalData.ethereumAddress
-      toAddress = unpadAddress(tx.topics[2])
-    } else {
-      fromAddress = unpadAddress(tx.topics[1])
-      toAddress = this.walletLocalData.ethereumAddress
-      netNativeAmount = bns.add('0', tx.data)
-      ourReceiveAddresses.push(this.walletLocalData.ethereumAddress.toLowerCase())
+    if (connectionType === 'indy') {
+      if (tx.from === this.walletLocalData.ethereumAddress) {
+        netNativeAmount = bns.sub('0', tx.data)
+        fromAddress = this.walletLocalData.ethereumAddress
+        toAddress = tx.to ? tx.to : tx.contractAddress
+      } else {
+        fromAddress = tx.from
+        toAddress = this.walletLocalData.ethereumAddress
+        netNativeAmount = bns.add('0', tx.data)
+        ourReceiveAddresses.push(this.walletLocalData.ethereumAddress.toLowerCase())
+      }
+    } else { // we got the transaction from etherscan
+      if (tx.topics[1] === paddedAddress) {
+        netNativeAmount = bns.sub('0', tx.data)
+        fromAddress = this.walletLocalData.ethereumAddress
+        toAddress = unpadAddress(tx.topics[2])
+      } else {
+        fromAddress = unpadAddress(tx.topics[1])
+        toAddress = this.walletLocalData.ethereumAddress
+        netNativeAmount = bns.add('0', tx.data)
+        ourReceiveAddresses.push(this.walletLocalData.ethereumAddress.toLowerCase())
+      }
     }
 
     if (netNativeAmount.length > 50) {
-      // Etherscan occasionally send back a transactino with a corrupt amount in tx.data. Ignore this tx.
+      // Etherscan occasionally send back a transaction with a corrupt amount in tx.data. Ignore this tx.
       return
     }
 
@@ -572,7 +585,8 @@ class EthereumEngine {
     }
 
     try {
-      const transactions = await this.connectionManager.getTokenTxs(address, contractAddress, startBlock, endBlock)
+      const transactionsRes = await this.connectionManager.getTokenTxs(address, contractAddress, startBlock, endBlock)
+      const transactions = transactionsRes.transactions
       if (transactions) {
         this.log(`Fetched token ${tokenInfo.currencyCode} transactions count: ${transactions.length}`)
 
@@ -580,7 +594,7 @@ class EthereumEngine {
         // Iterate over transactions in address
         for (let i = 0; i < transactions.length; i++) {
           const tx = transactions[i]
-          this.processEtherscanTokenTransaction(tx, currencyCode)
+          this.processEtherscanTokenTransaction(tx, currencyCode, transactionsRes.connectionType)
           this.tokenCheckStatus[currencyCode] = ((i + 1) / transactions.length)
           if (i % 10 === 0) {
             this.updateOnAddressesChecked()
@@ -602,7 +616,7 @@ class EthereumEngine {
 
   async checkUnconfirmedTransactionsFetch () {
     const address = normalizeAddress(this.walletLocalData.ethereumAddress)
-    const transactions = this.connectionManager.getPendingTxs(address)
+    const transactions = await this.connectionManager.getPendingTxs(address)
     if (transactions) {
       for (const tx of transactions) {
         if (
@@ -624,7 +638,7 @@ class EthereumEngine {
     const address = this.walletLocalData.ethereumAddress
     try {
       // Ethereum only has one address
-      let fetchFunction
+      let fetchFunction = async () => { await this.connectionManager.getAddressBalance(address) }
       const promiseArray = []
 
       // ************************************
@@ -640,7 +654,8 @@ class EthereumEngine {
             const tokenInfo = this.getTokenInfo(tk)
             if (tokenInfo && typeof tokenInfo.contractAddress === 'string') {
               // url = sprintf('?module=account&action=tokenbalance&contractaddress=%s&address=%s&tag=latest', tokenInfo.contractAddress, this.walletLocalData.ethereumAddress)
-              fetchFunction = async () => { await this.connectionManager.getTokenBalance(this.walletLocalData.ethereumAddress, tokenInfo.contractAddress) }
+              const contractAddress: string = tokenInfo.contractAddress.toString()
+              fetchFunction = async () => { await this.connectionManager.getTokenBalance(this.walletLocalData.ethereumAddress, contractAddress) }
               promiseArray.push(this.checkTokenTransactionsFetch(tk))
             } else {
               continue

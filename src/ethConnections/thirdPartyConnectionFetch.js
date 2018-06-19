@@ -54,7 +54,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getHighestBlock (): Promise<string> {
+  async getHighestBlock (): Promise<number> {
     const url = '?module=proxy&action=eth_blockNumber'
     const jsonObj = await this.connection.etherscanFetchGet(url)
     const valid = this.validateObject(jsonObj, {
@@ -73,7 +73,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getPendingTxs (address: string): Promise<[]> {
+  async getPendingTxs (address: string): Promise<any> {
     // const url = `${otherSettings.superethServers[0]}/v1/eth/main/txs/${address}`
     const url = sprintf('%s/v1/eth/main/txs/%s', otherSettings.superethServers[0], address)
     const pendingTxs = await this.connection.superEthfetchGet(url)
@@ -138,7 +138,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<[]> {
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
     // const urlNew = `?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=${endBlock}&sort=asc`
     const url = sprintf('?module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc', address, startBlock, endBlock)
     const accountTxs = await this.connection.etherscanFetchGet(url)
@@ -190,7 +190,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<[]> {
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
     // const url = `?module=logs&action=getLogs&fromBlock=startBlock&toBlock=latest&address=${token}&topic0=${address}`
     const url = sprintf('?module=logs&action=getLogs&fromBlock=%d&toBlock=latest&address=%s&topic0=%s', startBlock, token, address)
     const tokenTxs = await this.connection.etherscanFetchGet(url)
@@ -235,9 +235,9 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getBlockTxs (block: string): Promise<[]> {
-    // TBD
-    return null
+  async getBlockTxs (block: string): Promise<Array<any>> {
+    // TBD - just for compiling
+    throw new Error('not impelemente')
   }
 
   validateObject (object: any, schema: any) {

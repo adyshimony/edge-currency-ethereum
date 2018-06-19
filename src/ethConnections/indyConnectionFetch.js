@@ -16,17 +16,17 @@ class IndyConnectionFetch implements ConnectionFetch {
     const url = `/account/balance/${address}`
     const balance = await this.connection.indyFetchGet(url)
     console.log(`Indy balance: ${balance} for account: ${address}`)
-    return balance
+    return balance.result
   }
 
   async getTokenBalance (address: string, token: string): Promise<string> {
     const url = `/token/balance/${address}`
     const balance = await this.connection.indyFetchGet(url)
     console.log(`Indy token balance: ${balance} for account: ${address}, token: ${token}`)
-    return balance
+    return balance.result
   }
 
-  async getHighestBlock (): Promise<string> {
+  async getHighestBlock (): Promise<number> {
     const url = `/mempool/highest`
     console.log('Indy getHighestBlock')
     const highetBlockNumberResult = await this.connection.indyFetchGet(url)
@@ -34,32 +34,32 @@ class IndyConnectionFetch implements ConnectionFetch {
     return highetBlockNumberResult.result
   }
 
-  async getPendingTxs (address: string): Promise<[]> {
+  async getPendingTxs (address: string): Promise<Array<any>> {
     const url = `/mempool/pending${address}`
     const pendingTxs = await this.connection.indyFetchGet(url)
     console.log(`Indy return ${pendingTxs.length} pending Txs`)
-    return pendingTxs
+    return pendingTxs.result
   }
 
-  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<[]> {
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
     const url = `/account/${address}/${startBlock}/${endBlock}`
     const accountTxs = await this.connection.indyFetchGet(url)
     console.log(`Indy return ${(accountTxs.length ? accountTxs.length : 0)} Txs for account: ${address} `)
     return accountTxs.result
   }
 
-  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<[]> {
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
     const url = `/tokens/${address}/${token}/${startBlock}/${endBlock}`
     const tokenTxs = await this.connection.indyFetchGet(url)
     console.log(`Indy return ${(tokenTxs.length ? tokenTxs.length : 0)} Txs of token: ${token} for account: ${address} `)
     return tokenTxs.result
   }
 
-  async getBlockTxs (block: string): Promise<[]> {
+  async getBlockTxs (block: string): Promise<Array<any>> {
     const url = `/mempool/block/${block}`
     const blockTxs = await this.connection.indyFetchGet(url)
     console.log(`Indy return ${blockTxs.length} Txs of block: ${block} `)
-    return blockTxs
+    return blockTxs.result
   }
 }
 
