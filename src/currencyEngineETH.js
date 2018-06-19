@@ -407,6 +407,59 @@ class EthereumEngine {
     }
   }
 
+  processIndyUnconfirmedTransaction (tx: any) {
+    const fromAddress = tx.from
+    const toAddress = tx.to
+    const epochTime = Date.parse(tx.timeStamp) / 1000
+    const ourReceiveAddresses:Array<string> = []
+    const txFees = tx.gas * tx.gasPrice
+
+    let nativeAmount: string
+    if (normalizeAddress(fromAddress) === normalizeAddress(this.walletLocalData.ethereumAddress)) {
+      nativeAmount = (0 - tx.value).toString(10)
+      nativeAmount = bns.sub(nativeAmount, txFees.toString(10))
+    } else {
+      nativeAmount = tx.value.toString(10)
+      ourReceiveAddresses.push(this.walletLocalData.ethereumAddress)
+    }
+
+    const ethParams = new EthereumParams(
+      [ fromAddress ],
+      [ toAddress ],
+      '',
+      '',
+      txFees.toString(10),
+      '',
+      0,
+      null
+    )
+
+    const edgeTransaction:EdgeTransaction = {
+      txid: addHexPrefix(tx.hash),
+      date: epochTime,
+      currencyCode: 'ETH',
+      blockHeight: tx.blockNumber,
+      nativeAmount,
+      networkFee: txFees.toString(10),
+      ourReceiveAddresses,
+      signedTx: 'iwassignedyoucantrustme',
+      otherParams: ethParams
+    }
+
+    const idx = this.findTransaction(PRIMARY_CURRENCY, tx.hash)
+    if (idx === -1) {
+      this.log(sprintf('processUnconfirmedTransaction: New transaction: %s', tx.hash))
+
+      // New transaction not in database
+      this.addTransaction(PRIMARY_CURRENCY, edgeTransaction)
+
+      this.edgeTxLibCallbacks.onTransactionsChanged(
+        this.transactionsChangedArray
+      )
+      this.transactionsChangedArray = []
+    }
+  }
+
   processUnconfirmedTransaction (tx: any) {
     const fromAddress = '0x' + tx.inputs[0].addresses[0]
     const toAddress = '0x' + tx.outputs[0].addresses[0]
@@ -616,14 +669,19 @@ class EthereumEngine {
 
   async checkUnconfirmedTransactionsFetch () {
     const address = normalizeAddress(this.walletLocalData.ethereumAddress)
-    const transactions = await this.connectionManager.getPendingTxs(address)
+    const pendingTransactionsRes = await this.connectionManager.getPendingTxs(address)
+    const transactions = pendingTransactionsRes.result
     if (transactions) {
       for (const tx of transactions) {
-        if (
-          normalizeAddress(tx.inputs[0].addresses[0]) === address ||
-          normalizeAddress(tx.outputs[0].addresses[0]) === address
-        ) {
-          this.processUnconfirmedTransaction(tx)
+        if (pendingTransactionsRes.connectionType === 'indy') {
+          this.processIndyUnconfirmedTransaction(tx)
+        } else {
+          if (
+            normalizeAddress(tx.inputs[0].addresses[0]) === address ||
+            normalizeAddress(tx.outputs[0].addresses[0]) === address
+          ) {
+            this.processUnconfirmedTransaction(tx)
+          }
         }
       }
     } else {
