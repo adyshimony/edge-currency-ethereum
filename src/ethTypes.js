@@ -150,4 +150,6 @@ export interface ConnectionFetch {
   getTokenTxs(address: string, token: string, tartBlock: number, endBlock: number): Promise<any>;
   // get txs for a spefic block
   getBlockTxs(block: string): Promise<Array<any>>;
+  // rerun the current connection type derived from this interface
+  connectionType(): string;
 }

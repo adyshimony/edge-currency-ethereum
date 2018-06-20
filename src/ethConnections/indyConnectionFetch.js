@@ -12,6 +12,10 @@ class IndyConnectionFetch implements ConnectionFetch {
     this.connection = new ConnectionUtils(io)
   }
 
+  connectionType (): string {
+    return 'indy'
+  }
+
   async getAddressBalance (address: string): Promise<string> {
     const url = `/account/balance/${address}`
     const balance = await this.connection.indyFetchGet(url)

@@ -16,6 +16,10 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     this.connection = new ConnectionUtils(io)
   }
 
+  connectionType (): string {
+    return 'etherscan'
+  }
+
   async getAddressBalance (address: string): Promise<string> {
     // const url = `?module=account&action=balance&address=${address}&tag=latest`
     const url = sprintf('?module=account&action=balance&address=%s&tag=latest', address)

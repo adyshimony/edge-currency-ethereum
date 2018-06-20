@@ -9,21 +9,25 @@ import { IndyConnectionFetch } from './indyConnectionFetch'
 import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
 
 class ConnectionManager implements ConnectionFetch {
-  indyConnection: IndyConnectionFetch
-  etherscanConnection: ThirdPartyConnectionFetch
+  primaryConnection: IndyConnectionFetch
+  secondaryConnection: ThirdPartyConnectionFetch
 
   constructor (io: EdgeIo) {
-    this.indyConnection = new IndyConnectionFetch(io)
-    this.etherscanConnection = new ThirdPartyConnectionFetch(io)
+    this.primaryConnection = new IndyConnectionFetch(io)
+    this.secondaryConnection = new ThirdPartyConnectionFetch(io)
+  }
+
+  connectionType (): string {
+    return 'connectionManager'
   }
 
   async getAddressBalance (address: string): Promise<string> {
     try {
-      const res = await this.indyConnection.getAddressBalance(address)
+      const res = await this.primaryConnection.getAddressBalance(address)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getAddressBalance(address)
+        const res = await this.secondaryConnection.getAddressBalance(address)
         return res
       } catch (error) {
         throw error
@@ -33,11 +37,11 @@ class ConnectionManager implements ConnectionFetch {
 
   async getTokenBalance (address: string, token: string): Promise<string> {
     try {
-      const res = await this.indyConnection.getTokenBalance(address, token)
+      const res = await this.primaryConnection.getTokenBalance(address, token)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getTokenBalance(address, token)
+        const res = await this.secondaryConnection.getTokenBalance(address, token)
         return res
       } catch (error) {
         throw error
@@ -47,14 +51,11 @@ class ConnectionManager implements ConnectionFetch {
 
   async getHighestBlock (): Promise<number> {
     try {
-      const res = await this.indyConnection.getHighestBlock()
+      const res = await this.primaryConnection.getHighestBlock()
       return res
     } catch (error) {
       try {
-        console.log('error indy - move to etherscan')
-        console.log(`error indy: ${error}`)
-
-        const res = await this.etherscanConnection.getHighestBlock()
+        const res = await this.secondaryConnection.getHighestBlock()
         return res
       } catch (error) {
         throw error
@@ -64,17 +65,17 @@ class ConnectionManager implements ConnectionFetch {
 
   async getPendingTxs (address: string): Promise<any> {
     try {
-      const res = await this.indyConnection.getPendingTxs(address)
+      const res = await this.primaryConnection.getPendingTxs(address)
       const resObj = {
-        'connectionType': 'indy',
+        'connectionType': this.primaryConnection.connectionType(),
         'result': res
       }
       return resObj
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getPendingTxs(address)
+        const res = await this.secondaryConnection.getPendingTxs(address)
         const resObj = {
-          'connectionType': 'etherscan',
+          'connectionType': this.primaryConnection.connectionType(),
           'result': res
         }
         return resObj
@@ -86,11 +87,11 @@ class ConnectionManager implements ConnectionFetch {
 
   async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
     try {
-      const res = await this.indyConnection.getAddressTxs(address, startBlock, endBlock)
+      const res = await this.primaryConnection.getAddressTxs(address, startBlock, endBlock)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getAddressTxs(address, startBlock, endBlock)
+        const res = await this.secondaryConnection.getAddressTxs(address, startBlock, endBlock)
         return res
       } catch (error) {
         throw error
@@ -100,17 +101,17 @@ class ConnectionManager implements ConnectionFetch {
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
     try {
-      const res = await this.indyConnection.getTokenTxs(address, token, startBlock, endBlock)
+      const res = await this.primaryConnection.getTokenTxs(address, token, startBlock, endBlock)
       const resObj = {
-        'connectionType': 'indy',
+        'connectionType': this.primaryConnection.connectionType(),
         'result': res
       }
       return resObj
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getTokenTxs(address, token, startBlock, endBlock)
+        const res = await this.secondaryConnection.getTokenTxs(address, token, startBlock, endBlock)
         const resObj = {
-          'connectionType': 'etherscan',
+          'connectionType': this.primaryConnection.connectionType(),
           'result': res
         }
         return resObj
@@ -122,11 +123,11 @@ class ConnectionManager implements ConnectionFetch {
 
   async getBlockTxs (block: string): Promise<Array<any>> {
     try {
-      const res = await this.indyConnection.getBlockTxs(block)
+      const res = await this.primaryConnection.getBlockTxs(block)
       return res
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getBlockTxs(block)
+        const res = await this.secondaryConnection.getBlockTxs(block)
         return res
       } catch (error) {
         throw error
