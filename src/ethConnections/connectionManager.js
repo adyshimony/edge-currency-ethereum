@@ -9,12 +9,12 @@ import { IndyConnectionFetch } from './indyConnectionFetch'
 import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
 
 class ConnectionManager implements ConnectionFetch {
-  primaryConnection: IndyConnectionFetch
-  secondaryConnection: ThirdPartyConnectionFetch
+  primaryConnection: any
+  secondaryConnection: any
 
-  constructor (io: EdgeIo) {
-    this.primaryConnection = new IndyConnectionFetch(io)
-    this.secondaryConnection = new ThirdPartyConnectionFetch(io)
+  constructor (io: EdgeIo, indy: boolean = true) {
+    this.primaryConnection = indy ? new IndyConnectionFetch(io) : new ThirdPartyConnectionFetch(io)
+    this.secondaryConnection = !indy ? new ThirdPartyConnectionFetch(io) : new IndyConnectionFetch(io)
   }
 
   connectionType (): string {

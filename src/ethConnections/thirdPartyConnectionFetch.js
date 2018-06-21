@@ -32,7 +32,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
       'required': ['result']
     })
     if (valid) {
-      console.log(`Etherscan token balance: ${balance} for account: ${address}}`)
+      console.log(`Etherscan token balance: ${balance.result} for account: ${address}}`)
       return balance.result
     } else {
       throw new Error(`Error validation balance from etherscan for account: ${address}`)
@@ -51,7 +51,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
       'required': ['result']
     })
     if (valid) {
-      console.log(`Etherscan token balance: ${balance} for account: ${address}, token: ${token}`)
+      console.log(`Etherscan token balance: ${balance.result} for account: ${address}, token: ${token}`)
       return balance.result
     } else {
       throw new Error(`Error validation token balance from etherscan for account: ${address}, token: ${token}`)
@@ -187,7 +187,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
       'required': ['result']
     })
     if (valid) {
-      console.log(`Etherscan return ${accountTxs.length} Txs for account: ${address} `)
+      console.log(`Etherscan return ${accountTxs.result.length} Txs for account: ${address} `)
       return accountTxs.result
     } else {
       throw new Error(`Error validation transactions from etherscanfor account: ${address}`)
@@ -232,7 +232,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
       'required': ['result']
     })
     if (valid) {
-      console.log(`Etherscan return ${tokenTxs.length} Txs of token: ${token} for account: ${address} `)
+      console.log(`Etherscan return ${tokenTxs.result.length} Txs of token: ${token} for account: ${address} `)
       return tokenTxs.result
     } else {
       throw new Error(`Error validation transactions from etherscanforof token: ${token} for account: ${address}`)

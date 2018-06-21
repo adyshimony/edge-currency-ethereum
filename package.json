@@ -20,7 +20,7 @@
     "url": "git@github.com:Airbitz/edge-currency-ethereum.git"
   },
   "scripts": {
-    "build": "npm run webpack && npm run rollup && npm run build:flow",
+    "build": "npm run webpack && npm run rollup && npm run build:flow && npm run copy",
     "build:clean": "rimraf lib",
     "build:flow": "flow-copy-source -v -i '**/test/**' src lib",
     "build:test": "rollup -c rollup.config.test.js",
@@ -35,7 +35,8 @@
     "test": "nyc mocha --require source-map-support/register build/tests.cjs.js",
     "posttest": "nyc report --reporter=html",
     "updot": "updot",
-    "webpack": "webpack"
+    "webpack": "webpack",
+    "copy": "cp -f ./lib/indexEthereum.js ../edge-react-gui/node_modules/edge-currency-ethereum/lib/indexEthereum.js"
   },
   "dependencies": {
     "biggystring": "^3.0.0",
