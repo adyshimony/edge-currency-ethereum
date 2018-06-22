@@ -41,7 +41,7 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async getPendingTxs (address: string): Promise<Array<any>> {
-    const url = `/mempool/pending/${address}`
+    const url = `/mempool/txs/${address}`
     console.log(`Indy getPendingTxs url: ${url}`)
     const pendingTxs = await this.connection.indyFetchGet(url)
     console.log(`Indy return ${pendingTxs.count} pending Txs`)

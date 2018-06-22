@@ -30,7 +30,7 @@ import {
   type EthereumFeesGasPrice,
   type EthereumFee
 } from './ethTypes.js'
-import { isHex, normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex } from './ethUtils.js'
+import { isHex, normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex, padAddress, unpadAddress } from './ethUtils.js'
 import { ConnectionManager } from './ethConnections/connectionManager.js'
 
 const Buffer = require('buffer/').Buffer
@@ -53,20 +53,6 @@ type BroadcastResults = {
   incrementNonce: boolean,
   decrementNonce: boolean
 }
-
-function unpadAddress (address: string): string {
-  const unpadded = bns.add('0', address, 16)
-  return unpadded
-}
-
-function padAddress (address: string): string {
-  const normalizedAddress = normalizeAddress(address)
-  const padding = 64 - normalizedAddress.length
-  const zeroString = '0000000000000000000000000000000000000000000000000000000000000000'
-  const out = '0x' + zeroString.slice(0, padding) + normalizedAddress
-  return out
-}
-
 class EthereumParams {
   from: Array<string>
   to: Array<string>
@@ -138,7 +124,7 @@ class EthereumEngine {
     this.allTokens = currencyInfo.metaTokens.slice(0)
     this.customTokens = []
     this.timers = {}
-    this.connectionManager = new ConnectionManager(io_)
+    this.connectionManager = new ConnectionManager(io_, false)
 
     if (typeof opts.optionalSettings !== 'undefined') {
       this.currentSettings = opts.optionalSettings
@@ -706,14 +692,14 @@ class EthereumEngine {
       for (const tk of this.walletLocalData.enabledTokens) {
         if (tk === PRIMARY_CURRENCY) {
           // url = sprintf('?module=account&action=balance&address=%s&tag=latest', address)
-          fetchFunction = async () => { await this.connectionManager.getAddressBalance(address) }
+          fetchFunction = async () => { return this.connectionManager.getAddressBalance(address) }
         } else {
           if (this.getTokenStatus(tk)) {
             const tokenInfo = this.getTokenInfo(tk)
             if (tokenInfo && typeof tokenInfo.contractAddress === 'string') {
               // url = sprintf('?module=account&action=tokenbalance&contractaddress=%s&address=%s&tag=latest', tokenInfo.contractAddress, this.walletLocalData.ethereumAddress)
               const contractAddress: string = tokenInfo.contractAddress.toString()
-              fetchFunction = async () => { await this.connectionManager.getTokenBalance(this.walletLocalData.ethereumAddress, contractAddress) }
+              fetchFunction = async () => { return this.connectionManager.getTokenBalance(this.walletLocalData.ethereumAddress, contractAddress) }
               promiseArray.push(this.checkTokenTransactionsFetch(tk))
             } else {
               continue
