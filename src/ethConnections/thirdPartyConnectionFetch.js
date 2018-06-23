@@ -196,7 +196,9 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
     // const url = `?module=logs&action=getLogs&fromBlock=startBlock&toBlock=latest&address=${token}&topic0=${address}`
-    const url = sprintf('?module=logs&action=getLogs&fromBlock=%d&toBlock=latest&address=%s&topic0=%s', startBlock, token, address)
+    const url = sprintf('?module=logs&action=getLogs&fromBlock=%d&toBlock=latest&address=%s&topic0=0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef&topic0_1_opr=and&topic1=%s&topic1_2_opr=or&topic2=%s', startBlock, token, address, address)
+    console.log(`Etherscan getTokenTxs url: ${url}`)
+
     const tokenTxs = await this.connection.etherscanFetchGet(url)
     const valid = this.validateObject(tokenTxs, {
       'type': 'object',

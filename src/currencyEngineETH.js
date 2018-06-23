@@ -124,7 +124,7 @@ class EthereumEngine {
     this.allTokens = currencyInfo.metaTokens.slice(0)
     this.customTokens = []
     this.timers = {}
-    this.connectionManager = new ConnectionManager(io_, false)
+    this.connectionManager = new ConnectionManager(io_, false) // true for indy, false for etherscan
 
     if (typeof opts.optionalSettings !== 'undefined') {
       this.currentSettings = opts.optionalSettings
@@ -625,7 +625,7 @@ class EthereumEngine {
 
     try {
       const transactionsRes = await this.connectionManager.getTokenTxs(address, contractAddress, startBlock, endBlock)
-      const transactions = transactionsRes.transactions
+      const transactions = transactionsRes.result
       if (transactions) {
         this.log(`Fetched token ${tokenInfo.currencyCode} transactions count: ${transactions.length}`)
 
