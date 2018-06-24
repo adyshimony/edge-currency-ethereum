@@ -21,46 +21,30 @@ class ConnectionManager implements ConnectionFetch {
     return 'connectionManager'
   }
 
-  async getAddressBalance (address: string): Promise<string> {
+  async callConnectionGet (getFunction: string, ...args: any[]): Promise<any> {
     try {
-      const res = await this.primaryConnection.getAddressBalance(address)
+      const res = await this.primaryConnection[getFunction](args)
       return res
     } catch (error) {
       try {
-        const res = await this.secondaryConnection.getAddressBalance(address)
+        const res = await this.secondaryConnection[getFunction](args)
         return res
       } catch (error) {
         throw error
       }
     }
+  }
+
+  async getAddressBalance (address: string): Promise<string> {
+    return this.callConnectionGet('getAddressBalance', address)
   }
 
   async getTokenBalance (address: string, token: string): Promise<string> {
-    try {
-      const res = await this.primaryConnection.getTokenBalance(address, token)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getTokenBalance(address, token)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getTokenBalance', address, token)
   }
 
   async getHighestBlock (): Promise<number> {
-    try {
-      const res = await this.primaryConnection.getHighestBlock()
-      return res
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getHighestBlock()
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getHighestBlock')
   }
 
   async getPendingTxs (address: string): Promise<any> {
@@ -86,17 +70,7 @@ class ConnectionManager implements ConnectionFetch {
   }
 
   async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
-    try {
-      const res = await this.primaryConnection.getAddressTxs(address, startBlock, endBlock)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getAddressTxs(address, startBlock, endBlock)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getAddressTxs', startBlock, endBlock)
   }
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
@@ -122,17 +96,7 @@ class ConnectionManager implements ConnectionFetch {
   }
 
   async getBlockTxs (block: string): Promise<Array<any>> {
-    try {
-      const res = await this.primaryConnection.getBlockTxs(block)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getBlockTxs(block)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getBlockTxs', block)
   }
 }
 

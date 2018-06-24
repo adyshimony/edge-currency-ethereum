@@ -34,6 +34,7 @@ class ConnectionUtils {
       apiKey = '&apikey=' + global.etherscanApiKey
     }
     const url = sprintf('%s/api%s%s', otherSettings.etherscanApiServers[0], cmd, apiKey)
+    console.log(`Etherscan fetch get url: ${url}`)
 
     const response = await this.io.fetch(url, {
       method: 'GET'
