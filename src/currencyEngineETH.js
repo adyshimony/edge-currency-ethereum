@@ -207,7 +207,8 @@ class EthereumEngine {
   // *************************************
   async blockHeightInnerLoop () {
     try {
-      const blockHeight:number = await this.connectionManager.getHighestBlock()
+      const blockHeightRes = await this.connectionManager.getHighestBlock()
+      const blockHeight:number = blockHeightRes.result
       if (blockHeight) {
         this.log(`Got block height ${blockHeight}`)
         if (this.walletLocalData.blockHeight !== blockHeight) {
@@ -516,7 +517,8 @@ class EthereumEngine {
   async checkAddressFetch (tk: string, fetchFunction: Function) {
     let checkAddressSuccess = true
     try {
-      const balance = await fetchFunction()
+      const balanceRes = await fetchFunction()
+      const balance = balanceRes.result
       if (balance) {
         if (typeof this.walletLocalData.totalBalances[tk] === 'undefined') {
           this.walletLocalData.totalBalances[tk] = '0'
@@ -546,7 +548,8 @@ class EthereumEngine {
     }
 
     try {
-      const transactions = await this.connectionManager.getAddressTxs(address, startBlock, endBlock)
+      const transactionsRes = await this.connectionManager.getAddressTxs(address, startBlock, endBlock)
+      const transactions = transactionsRes.result
       if (transactions) {
         this.log('Fetched transactions count: ' + transactions.length)
         // Get transactions

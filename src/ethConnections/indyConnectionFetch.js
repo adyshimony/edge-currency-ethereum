@@ -26,31 +26,31 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async getAddressBalance (address: string): Promise<string> {
-    return this.fetch('getAddressBalance', '/account/balance/', address)
+    return this.fetch('address balance', '/account/balance/', address)
   }
 
   async getTokenBalance (address: string, token: string): Promise<string> {
-    return this.fetch('getTokenBalance', '/token/balance', address, token)
+    return this.fetch('token balance', '/token/balance', address, token)
   }
 
   async getHighestBlock (): Promise<number> {
-    return this.fetch('getHighestBlock', '/mempool/highest')
+    return this.fetch('highest block', '/mempool/highest')
   }
 
   async getPendingTxs (address: string): Promise<Array<any>> {
-    return this.fetch('getPendingTxs', '/mempool/txs', address)
+    return this.fetch('pending txs', '/mempool/txs', address)
   }
 
   async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
-    return this.fetch('getAddressTxs', '/account', address, startBlock, endBlock)
+    return this.fetch('address txs', '/account', address, startBlock, endBlock)
   }
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
-    return this.fetch('getTokenTxs', '/tokens', address, token, startBlock, endBlock)
+    return this.fetch('token txs', '/tokens', address, token, startBlock, endBlock)
   }
 
   async getBlockTxs (block: string): Promise<Array<any>> {
-    return this.fetch('getBlockTxs', '/mempool/block', block)
+    return this.fetch('block txs', '/mempool/block', block)
   }
 }
 

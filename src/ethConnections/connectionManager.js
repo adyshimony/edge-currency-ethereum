@@ -23,12 +23,20 @@ class ConnectionManager implements ConnectionFetch {
 
   async callConnectionGet (getFunction: string, ...args: any[]): Promise<any> {
     try {
-      const res = await this.primaryConnection[getFunction](args)
-      return res
+      const res = await this.primaryConnection[getFunction](...args)
+      const resObj = {
+        'connectionType': this.primaryConnection.connectionType(),
+        'result': res
+      }
+      return resObj
     } catch (error) {
       try {
-        const res = await this.secondaryConnection[getFunction](args)
-        return res
+        const res = await this.secondaryConnection[getFunction](...args)
+        const resObj = {
+          'connectionType': this.primaryConnection.connectionType(),
+          'result': res
+        }
+        return resObj
       } catch (error) {
         throw error
       }
@@ -48,51 +56,15 @@ class ConnectionManager implements ConnectionFetch {
   }
 
   async getPendingTxs (address: string): Promise<any> {
-    try {
-      const res = await this.primaryConnection.getPendingTxs(address)
-      const resObj = {
-        'connectionType': this.primaryConnection.connectionType(),
-        'result': res
-      }
-      return resObj
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getPendingTxs(address)
-        const resObj = {
-          'connectionType': this.primaryConnection.connectionType(),
-          'result': res
-        }
-        return resObj
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getPendingTxs', address)
   }
 
   async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
-    return this.callConnectionGet('getAddressTxs', startBlock, endBlock)
+    return this.callConnectionGet('getAddressTxs', address, startBlock, endBlock)
   }
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
-    try {
-      const res = await this.primaryConnection.getTokenTxs(address, token, startBlock, endBlock)
-      const resObj = {
-        'connectionType': this.primaryConnection.connectionType(),
-        'result': res
-      }
-      return resObj
-    } catch (error) {
-      try {
-        const res = await this.secondaryConnection.getTokenTxs(address, token, startBlock, endBlock)
-        const resObj = {
-          'connectionType': this.primaryConnection.connectionType(),
-          'result': res
-        }
-        return resObj
-      } catch (error) {
-        throw error
-      }
-    }
+    return this.callConnectionGet('getTokenTxs', address, token, startBlock, endBlock)
   }
 
   async getBlockTxs (block: string): Promise<Array<any>> {
