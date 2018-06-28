@@ -49,8 +49,10 @@ export function isHex (h: string) {
 }
 
 function unpadAddress (address: string): string {
-  const unpadded = bns.add('0', address, 16)
-  return unpadded
+  const normalizedAddress = normalizeAddress(address)
+  const unpadded = normalizedAddress.slice(24)
+  const out = '0x' + unpadded
+  return out
 }
 
 function padAddress (address: string): string {
