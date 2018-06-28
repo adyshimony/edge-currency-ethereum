@@ -43,15 +43,15 @@ class ConnectionManager implements ConnectionFetch {
     }
   }
 
-  async getAddressBalance (address: string): Promise<string> {
+  async getAddressBalance (address: string): Promise<any> {
     return this.callConnectionGet('getAddressBalance', address)
   }
 
-  async getTokenBalance (address: string, token: string): Promise<string> {
+  async getTokenBalance (address: string, token: string): Promise<any> {
     return this.callConnectionGet('getTokenBalance', address, token)
   }
 
-  async getHighestBlock (): Promise<number> {
+  async getHighestBlock (): Promise<any> {
     return this.callConnectionGet('getHighestBlock')
   }
 
@@ -59,7 +59,7 @@ class ConnectionManager implements ConnectionFetch {
     return this.callConnectionGet('getPendingTxs', address)
   }
 
-  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<any> {
     return this.callConnectionGet('getAddressTxs', address, startBlock, endBlock)
   }
 
@@ -67,7 +67,7 @@ class ConnectionManager implements ConnectionFetch {
     return this.callConnectionGet('getTokenTxs', address, token, startBlock, endBlock)
   }
 
-  async getBlockTxs (block: string): Promise<Array<any>> {
+  async getBlockTxs (block: string): Promise<any> {
     return this.callConnectionGet('getBlockTxs', block)
   }
 }

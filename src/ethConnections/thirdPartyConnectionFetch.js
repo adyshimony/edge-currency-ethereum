@@ -32,19 +32,19 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getAddressBalance (address: string): Promise<string> {
+  async getAddressBalance (address: string): Promise<any> {
     // const url = `?module=account&action=balance&address=${address}&tag=latest`
     const url = sprintf('?module=account&action=balance&address=%s&tag=latest', address)
     return this.fetch('address balance', url, EtherscanBalanceSchema)
   }
 
-  async getTokenBalance (address: string, token: string): Promise<string> {
+  async getTokenBalance (address: string, token: string): Promise<any> {
     // const url = `?module=account&action=tokenbalance&contractaddress=${token}&address=${address}&tag=latest`
     const url = sprintf('?module=account&action=tokenbalance&contractaddress=%s&address=%s&tag=latest', token, address)
     return this.fetch('token balance', url, EtherscanBalanceSchema)
   }
 
-  async getHighestBlock (): Promise<number> {
+  async getHighestBlock (): Promise<any> {
     const url = '?module=proxy&action=eth_blockNumber'
     const res = await this.fetch('highest block', url, EtherscanHighestSchema)
     const highetBlockNumber: number = parseInt(res, 16)
@@ -65,7 +65,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     }
   }
 
-  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<any> {
     // const urlNew = `?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=${endBlock}&sort=asc`
     const url = sprintf('?module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc', address, startBlock, endBlock)
     return this.fetch('address txs', url, EtherscanAccountTxSchema)
@@ -77,7 +77,7 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     return this.fetch('token txs', url, EtherscanTokenTxSchema)
   }
 
-  async getBlockTxs (block: string): Promise<Array<any>> {
+  async getBlockTxs (block: string): Promise<any> {
     // TBD - just for compiling
     throw new Error('not implemented in etherscan')
   }
