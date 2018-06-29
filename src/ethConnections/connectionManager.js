@@ -4,115 +4,71 @@
  */
 
 import type { EdgeIo } from 'edge-core-js'
-import { ConnectionFetch } from '../ethTypes.js'
+import { ConnectionFetch } from '../ethTypes'
 import { IndyConnectionFetch } from './indyConnectionFetch'
-import { EtherscanConnectionFetch } from './etherscanConnectionFetch'
+import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
 
 class ConnectionManager implements ConnectionFetch {
-  indyConnection: IndyConnectionFetch
-  etherscanConnection: EtherscanConnectionFetch
+  primaryConnection: any
+  secondaryConnection: any
 
-  constructor (io: EdgeIo) {
-    this.indyConnection = new IndyConnectionFetch(io)
-    this.etherscanConnection = new EtherscanConnectionFetch(io)
+  constructor (io: EdgeIo, indy: boolean = true) {
+    this.primaryConnection = indy ? new IndyConnectionFetch(io) : new ThirdPartyConnectionFetch(io)
+    this.secondaryConnection = !indy ? new ThirdPartyConnectionFetch(io) : new IndyConnectionFetch(io)
   }
 
-  async getAddressBalance (address: string): Promise<string> {
+  connectionType (): string {
+    return 'connectionManager'
+  }
+
+  async callConnectionGet (getFunction: string, ...args: any[]): Promise<any> {
     try {
-      const res = await this.indyConnection.getAddressBalance(address)
-      return res
+      const res = await this.primaryConnection[getFunction](...args)
+      const resObj = {
+        'connectionType': this.primaryConnection.connectionType(),
+        'result': res
+      }
+      return resObj
     } catch (error) {
       try {
-        const res = await this.etherscanConnection.getAddressBalance(address)
-        return res
+        const res = await this.secondaryConnection[getFunction](...args)
+        const resObj = {
+          'connectionType': this.primaryConnection.connectionType(),
+          'result': res
+        }
+        return resObj
       } catch (error) {
         throw error
       }
     }
   }
 
-  async getTokenBalance (address: string, token: string): Promise<string> {
-    try {
-      const res = await this.indyConnection.getTokenBalance(address, token)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getTokenBalance(address, token)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getAddressBalance (address: string): Promise<any> {
+    return this.callConnectionGet('getAddressBalance', address)
   }
 
-  async getHighestBlock (): Promise<string> {
-    try {
-      const res = await this.indyConnection.getHighestBlock()
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getHighestBlock()
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getTokenBalance (address: string, token: string): Promise<any> {
+    return this.callConnectionGet('getTokenBalance', address, token)
   }
 
-  async getPendingTxs (address: string): Promise<[]> {
-    try {
-      const res = await this.indyConnection.getPendingTxs(address)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getPendingTxs(address)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getHighestBlock (): Promise<any> {
+    return this.callConnectionGet('getHighestBlock')
   }
 
-  async getAddressTxs (address: string): Promise<[]> {
-    try {
-      const res = await this.indyConnection.getAddressTxs(address)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getAddressTxs(address)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getPendingTxs (address: string): Promise<any> {
+    return this.callConnectionGet('getPendingTxs', address)
   }
 
-  async getTokenTxs (address: string, token: string): Promise<[]> {
-    try {
-      const res = await this.indyConnection.getTokenTxs(address, token)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getTokenTxs(address, token)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<any> {
+    return this.callConnectionGet('getAddressTxs', address, startBlock, endBlock)
   }
 
-  async getBlockTxs (block: string): Promise<[]> {
-    try {
-      const res = await this.indyConnection.getBlockTxs(block)
-      return res
-    } catch (error) {
-      try {
-        const res = await this.etherscanConnection.getBlockTxs(block)
-        return res
-      } catch (error) {
-        throw error
-      }
-    }
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
+    return this.callConnectionGet('getTokenTxs', address, token, startBlock, endBlock)
+  }
+
+  async getBlockTxs (block: string): Promise<any> {
+    return this.callConnectionGet('getBlockTxs', block)
   }
 }
 

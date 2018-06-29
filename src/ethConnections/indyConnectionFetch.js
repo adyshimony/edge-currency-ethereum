@@ -3,7 +3,7 @@
  * @flow
  */
 import type { EdgeIo } from 'edge-core-js'
-import { ConnectionFetch } from '../ethTypes.js'
+import { ConnectionFetch } from '../ethTypes'
 import { ConnectionUtils } from './connectionUtils'
 
 class IndyConnectionFetch implements ConnectionFetch {
@@ -12,53 +12,45 @@ class IndyConnectionFetch implements ConnectionFetch {
     this.connection = new ConnectionUtils(io)
   }
 
+  connectionType (): string {
+    return 'indy'
+  }
+
+  async fetch (apiName: string, url: string, ...args: any[]): Promise<any> {
+    for (const arg of args) {
+      url += `/${arg}`
+    }
+    const response = await this.connection.indyFetchGet(url)
+    console.log(`Indy ${apiName} return : ${response.result} for url: ${url}`)
+    return response.result
+  }
+
   async getAddressBalance (address: string): Promise<string> {
-    const url = `/account/balance/${address}`
-    const balance = await this.connection.indyFetchGet(url)
-    console.log(`Indy balance: ${balance} for account: ${address}`)
-    return balance
+    return this.fetch('address balance', '/account/balance/', address)
   }
 
   async getTokenBalance (address: string, token: string): Promise<string> {
-    const url = `/token/balance/${address}`
-    const balance = await this.connection.indyFetchGet(url)
-    console.log(`Indy token balance: ${balance} for account: ${address}, token: ${token}`)
-    return balance
+    return this.fetch('token balance', '/token/balance', address, token)
   }
 
-  async getHighestBlock (): Promise<string> {
-    const url = `/mempool/latest`
-    const highetBlockNumber = await this.connection.indyFetchGet(url)
-    console.log(`Indy highest block: ${highetBlockNumber}`)
-    return highetBlockNumber
+  async getHighestBlock (): Promise<number> {
+    return this.fetch('highest block', '/mempool/highest')
   }
 
-  async getPendingTxs (address: string): Promise<[]> {
-    const url = `/mempool/pending${address}`
-    const pendingTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${pendingTxs.length} pending Txs`)
-    return pendingTxs
+  async getPendingTxs (address: string): Promise<Array<any>> {
+    return this.fetch('pending txs', '/mempool/txs', address)
   }
 
-  async getAddressTxs (address: string): Promise<[]> {
-    const url = `/account/${address}`
-    const accountTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${accountTxs.length} Txs for account: ${address} `)
-    return accountTxs
+  async getAddressTxs (address: string, startBlock: number, endBlock: number): Promise<Array<any>> {
+    return this.fetch('address txs', '/account', address, startBlock, endBlock)
   }
 
-  async getTokenTxs (address: string, token: string): Promise<[]> {
-    const url = `/tokens/${address}/${token}`
-    const tokenTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${tokenTxs.length} Txs of token: ${token} for account: ${address} `)
-    return tokenTxs
+  async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
+    return this.fetch('token txs', '/tokens', address, token, startBlock, endBlock)
   }
 
-  async getBlockTxs (block: string): Promise<[]> {
-    const url = `/mempool/block/${block}`
-    const blockTxs = await this.connection.indyFetchGet(url)
-    console.log(`Indy return ${blockTxs.length} Txs of block: ${block} `)
-    return blockTxs
+  async getBlockTxs (block: string): Promise<Array<any>> {
+    return this.fetch('block txs', '/mempool/block', block)
   }
 }
 

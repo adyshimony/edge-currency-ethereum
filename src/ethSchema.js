@@ -132,3 +132,147 @@ export const CustomTokenSchema = {
   },
   'required': ['currencyCode', 'currencyName', 'multiplier', 'contractAddress']
 }
+
+export const EtherscanBalanceSchema = {
+  'type': 'object',
+  'properties': {
+    'result': {'type': 'string'}
+  },
+  'required': ['result']
+}
+
+export const SuperethPendingSchema = {
+  'type': 'array',
+  'items': {
+    'type': 'object',
+    'properties': {
+      'block_height': { 'type': 'number' },
+      'fees': { 'type': 'number' },
+      'received': { 'type': 'string' },
+      'addresses': {
+        'type': 'array',
+        'items': { 'type': 'string' }
+      },
+      'inputs': {
+        'type': 'array',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'addresses': {
+              'type': 'array',
+              'items': { 'type': 'string' }
+            }
+          },
+          'required': [
+            'addresses'
+          ]
+        }
+      },
+      'outputs': {
+        'type': 'array',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'addresses': {
+              'type': 'array',
+              'items': { 'type': 'string' }
+            }
+          },
+          'required': [
+            'addresses'
+          ]
+        }
+      }
+    },
+    'required': [
+      'fees',
+      'received',
+      'addresses',
+      'inputs',
+      'outputs'
+    ]
+  }
+}
+
+export const EtherscanHighestSchema = {
+  'type': 'object',
+  'properties': {
+    'result': {'type': 'string'}
+  },
+  'required': ['result']
+}
+
+export const EtherscanAccountTxSchema = {
+  'type': 'object',
+  'properties': {
+    'result': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'blockNumber': {'type': 'string'},
+          'timeStamp': {'type': 'string'},
+          'hash': {'type': 'string'},
+          'from': {'type': 'string'},
+          'to': {'type': 'string'},
+          'nonce': {'type': 'string'},
+          'value': {'type': 'string'},
+          'gas': {'type': 'string'},
+          'gasPrice': {'type': 'string'},
+          'cumulativeGasUsed': {'type': 'string'},
+          'gasUsed': {'type': 'string'},
+          'confirmations': {'type': 'string'}
+        },
+        'required': [
+          'blockNumber',
+          'timeStamp',
+          'hash',
+          'from',
+          'to',
+          'nonce',
+          'value',
+          'gas',
+          'gasPrice',
+          'cumulativeGasUsed',
+          'gasUsed',
+          'confirmations'
+        ]
+      }
+    }
+  },
+  'required': ['result']
+}
+
+export const EtherscanTokenTxSchema = {
+  'type': 'object',
+  'properties': {
+    'result': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'data': {'type': 'string'},
+          'blockNumber': {'type': 'string'},
+          'timeStamp': {'type': 'string'},
+          'transactionHash': {'type': 'string'},
+          'gasPrice': {'type': 'string'},
+          'gasUsed': {'type': 'string'},
+          'topics': {
+            'type': 'array',
+            'items': { 'type': 'string' }
+          }
+        },
+        'required': [
+          'data',
+          'blockNumber',
+          'timeStamp',
+          'transactionHash',
+          'gasPrice',
+          'gasUsed',
+          'topics'
+        ]
+      }
+    }
+  },
+  'required': ['result']
+}

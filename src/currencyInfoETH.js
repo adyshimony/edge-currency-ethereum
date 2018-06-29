@@ -16,7 +16,7 @@ export const otherSettings: EthereumSettings = {
   ],
   iosAllowedTokens: { 'REP': true, 'WINGS': true, 'HUR': true, 'IND': true },
   indyApiServers: [
-    'https://52.191.117.55:3000/'
+    'http://52.191.117.55:3000'
   ]
 }
 

@@ -137,17 +137,19 @@ export class WalletLocalData {
 
 export interface ConnectionFetch {
   // get the highest block
-  getHighestBlock(): Promise<string>;
+  getHighestBlock(): Promise<any>;
   // get pending txs, can be filtered by an address
-  getPendingTxs(address: string): Promise<[]>;
+  getPendingTxs(address: string): Promise<any>;
   // get an address balance
-  getAddressBalance(address: string): Promise<string>;
+  getAddressBalance(address: string): Promise<any>;
   // get and address balance on a specific token
-  getTokenBalance(address: string, token: string): Promise<string>;
+  getTokenBalance(address: string, token: string): Promise<any>;
   // get address txs
-  getAddressTxs(address: string): Promise<[]>;
+  getAddressTxs(address: string, startBlock: number, endBlock: number): Promise<any>;
   // get address token txs
-  getTokenTxs(address: string, token: string): Promise<[]>;
+  getTokenTxs(address: string, token: string, tartBlock: number, endBlock: number): Promise<any>;
   // get txs for a spefic block
-  getBlockTxs(block: string): Promise<[]>;
+  getBlockTxs(block: string): Promise<any>;
+  // rerun the current connection type derived from this interface
+  connectionType(): string;
 }

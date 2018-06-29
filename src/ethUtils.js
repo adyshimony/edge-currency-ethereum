@@ -48,4 +48,19 @@ export function isHex (h: string) {
   return out
 }
 
-export { normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex }
+function unpadAddress (address: string): string {
+  const normalizedAddress = normalizeAddress(address)
+  const unpadded = normalizedAddress.slice(24)
+  const out = '0x' + unpadded
+  return out
+}
+
+function padAddress (address: string): string {
+  const normalizedAddress = normalizeAddress(address)
+  const padding = 64 - normalizedAddress.length
+  const zeroString = '0000000000000000000000000000000000000000000000000000000000000000'
+  const out = '0x' + zeroString.slice(0, padding) + normalizedAddress
+  return out
+}
+
+export { normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex, padAddress, unpadAddress }
