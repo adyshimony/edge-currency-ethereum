@@ -222,7 +222,7 @@ class EthereumEngine {
     }
   }
 
-  processEtherscanTransaction (tx: any) {
+  processTransaction (tx: any) {
     let netNativeAmount:string // Amount received into wallet
     const ourReceiveAddresses:Array<string> = []
 
@@ -299,7 +299,7 @@ class EthereumEngine {
     }
   }
 
-  processEtherscanTokenTransaction (tx: any, currencyCode: string, connectionType: string) {
+  processTokenTransaction (tx: any, currencyCode: string, connectionType: string) {
     let netNativeAmount:string // Amount received into wallet
     const ourReceiveAddresses:Array<string> = []
 
@@ -394,19 +394,18 @@ class EthereumEngine {
     }
   }
 
-  processIndyUnconfirmedTransaction (tx: any) {
-    const fromAddress = tx.from
-    const toAddress = tx.to
-    const epochTime = Date.parse(tx.timeStamp) / 1000
+  processUnconfirmedTransaction (txInfo: any) {
+    const fromAddress = txInfo.from
+    const toAddress = txInfo.to
+    const epochTime = txInfo.epochTime
     const ourReceiveAddresses:Array<string> = []
-    const txFees = tx.gas * tx.gasPrice
 
     let nativeAmount: string
     if (normalizeAddress(fromAddress) === normalizeAddress(this.walletLocalData.ethereumAddress)) {
-      nativeAmount = (0 - tx.value).toString(10)
-      nativeAmount = bns.sub(nativeAmount, txFees.toString(10))
+      nativeAmount = (0 - txInfo.value).toString(10)
+      nativeAmount = bns.sub(nativeAmount, txInfo.txFees.toString(10))
     } else {
-      nativeAmount = tx.value.toString(10)
+      nativeAmount = txInfo.value.toString(10)
       ourReceiveAddresses.push(this.walletLocalData.ethereumAddress)
     }
 
@@ -415,79 +414,27 @@ class EthereumEngine {
       [ toAddress ],
       '',
       '',
-      txFees.toString(10),
+      txInfo.fees.toString(10),
       '',
       0,
       null
     )
 
     const edgeTransaction:EdgeTransaction = {
-      txid: addHexPrefix(tx.hash),
+      txid: addHexPrefix(txInfo.hash),
       date: epochTime,
       currencyCode: 'ETH',
-      blockHeight: tx.blockNumber,
+      blockHeight: txInfo.blockHeight,
       nativeAmount,
-      networkFee: txFees.toString(10),
+      networkFee: txInfo.txFees.toString(10),
       ourReceiveAddresses,
       signedTx: 'iwassignedyoucantrustme',
       otherParams: ethParams
     }
 
-    const idx = this.findTransaction(PRIMARY_CURRENCY, tx.hash)
+    const idx = this.findTransaction(PRIMARY_CURRENCY, txInfo.hash)
     if (idx === -1) {
-      this.log(sprintf('processUnconfirmedTransaction: New transaction: %s', tx.hash))
-
-      // New transaction not in database
-      this.addTransaction(PRIMARY_CURRENCY, edgeTransaction)
-
-      this.edgeTxLibCallbacks.onTransactionsChanged(
-        this.transactionsChangedArray
-      )
-      this.transactionsChangedArray = []
-    }
-  }
-
-  processUnconfirmedTransaction (tx: any) {
-    const fromAddress = '0x' + tx.inputs[0].addresses[0]
-    const toAddress = '0x' + tx.outputs[0].addresses[0]
-    const epochTime = Date.parse(tx.received) / 1000
-    const ourReceiveAddresses:Array<string> = []
-
-    let nativeAmount: string
-    if (normalizeAddress(fromAddress) === normalizeAddress(this.walletLocalData.ethereumAddress)) {
-      nativeAmount = (0 - tx.total).toString(10)
-      nativeAmount = bns.sub(nativeAmount, tx.fees.toString(10))
-    } else {
-      nativeAmount = tx.total.toString(10)
-      ourReceiveAddresses.push(this.walletLocalData.ethereumAddress)
-    }
-
-    const ethParams = new EthereumParams(
-      [ fromAddress ],
-      [ toAddress ],
-      '',
-      '',
-      tx.fees.toString(10),
-      '',
-      0,
-      null
-    )
-
-    const edgeTransaction:EdgeTransaction = {
-      txid: addHexPrefix(tx.hash),
-      date: epochTime,
-      currencyCode: 'ETH',
-      blockHeight: tx.block_height,
-      nativeAmount,
-      networkFee: tx.fees.toString(10),
-      ourReceiveAddresses,
-      signedTx: 'iwassignedyoucantrustme',
-      otherParams: ethParams
-    }
-
-    const idx = this.findTransaction(PRIMARY_CURRENCY, tx.hash)
-    if (idx === -1) {
-      this.log(sprintf('processUnconfirmedTransaction: New transaction: %s', tx.hash))
+      this.log(sprintf('processUnconfirmedTransaction: New transaction: %s', txInfo.hash))
 
       // New transaction not in database
       this.addTransaction(PRIMARY_CURRENCY, edgeTransaction)
@@ -556,7 +503,7 @@ class EthereumEngine {
         // Iterate over transactions in address
         for (let i = 0; i < transactions.length; i++) {
           const tx = transactions[i]
-          this.processEtherscanTransaction(tx)
+          this.processTransaction(tx)
           this.tokenCheckStatus[ PRIMARY_CURRENCY ] = ((i + 1) / transactions.length)
           if (i % 10 === 0) {
             this.updateOnAddressesChecked()
@@ -636,7 +583,7 @@ class EthereumEngine {
         // Iterate over transactions in address
         for (let i = 0; i < transactions.length; i++) {
           const tx = transactions[i]
-          this.processEtherscanTokenTransaction(tx, currencyCode, transactionsRes.connectionType)
+          this.processTokenTransaction(tx, currencyCode, transactionsRes.connectionType)
           this.tokenCheckStatus[currencyCode] = ((i + 1) / transactions.length)
           if (i % 10 === 0) {
             this.updateOnAddressesChecked()
@@ -663,13 +610,31 @@ class EthereumEngine {
     if (transactions) {
       for (const tx of transactions) {
         if (pendingTransactionsRes.connectionType === 'indy') {
-          this.processIndyUnconfirmedTransaction(tx)
+          const txInfo = {
+            'from': tx.from,
+            'to': tx.to,
+            'epochTime': Date.parse(tx.timeStamp) / 1000,
+            'txFees': tx.gas * tx.gasPrice,
+            'value': tx.value,
+            'blockHeight': tx.blockNumber,
+            'hash': tx.hash
+          }
+          this.processUnconfirmedTransaction(txInfo)
         } else {
           if (
             normalizeAddress(tx.inputs[0].addresses[0]) === address ||
             normalizeAddress(tx.outputs[0].addresses[0]) === address
           ) {
-            this.processUnconfirmedTransaction(tx)
+            const txInfo = {
+              'from': '0x' + tx.inputs[0].addresses[0],
+              'to': '0x' + tx.outputs[0].addresses[0],
+              'epochTime': Date.parse(tx.received) / 1000,
+              'txFees': tx.fees,
+              'value': tx.total,
+              'blockHeight': tx.block_height,
+              'hash': tx.hash
+            }
+            this.processUnconfirmedTransaction(txInfo)
           }
         }
       }

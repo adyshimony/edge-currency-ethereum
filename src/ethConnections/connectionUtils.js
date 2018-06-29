@@ -4,7 +4,6 @@
  */
 import type { EdgeIo } from 'edge-core-js'
 import { otherSettings } from '../currencyInfoETH'
-import { sprintf } from 'sprintf-js'
 
 class ConnectionUtils {
   io: EdgeIo
@@ -33,9 +32,10 @@ class ConnectionUtils {
     if (global.etherscanApiKey && global.etherscanApiKey.length > 5) {
       apiKey = '&apikey=' + global.etherscanApiKey
     }
-    const url = sprintf('%s/api%s%s', otherSettings.etherscanApiServers[0], cmd, apiKey)
-    console.log(`Etherscan fetch get url: ${url}`)
+    // const url = sprintf('%s/api%s%s', otherSettings.etherscanApiServers[0], cmd, apiKey)
+    const url = `${otherSettings.etherscanApiServers[0]}/api${cmd}${apiKey}`
 
+    console.log(`Etherscan fetch get url: ${url}`)
     const response = await this.io.fetch(url, {
       method: 'GET'
     })
@@ -65,7 +65,9 @@ class ConnectionUtils {
     if (global.blockcypherApiKey && global.blockcypherApiKey.length > 5) {
       apiKey = '&token=' + global.blockcypherApiKey
     }
-    const url = sprintf('%s/%s%s', otherSettings.blockcypherApiServers[0], cmd, apiKey)
+    // const url = sprintf('%s/%s%s', otherSettings.blockcypherApiServers[0], cmd, apiKey)
+    const url = `${otherSettings.blockcypherApiServers[0]}/${cmd}${apiKey}`
+
     const response = await this.io.fetch(url, {
       headers: {
         Accept: 'application/json',
