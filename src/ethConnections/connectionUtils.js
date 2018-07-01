@@ -12,6 +12,18 @@ class ConnectionUtils {
     this.io = io
   }
 
+  async fetchGet (url: string) {
+    const response = await this.io.fetch(url, {
+      method: 'GET'
+    })
+    if (!response.ok) {
+      throw new Error(
+        `The server returned error code ${response.status} for ${url}`
+      )
+    }
+    return response.json()
+  }
+
   async indyFetchGet (cmd: string) {
     const url = `${otherSettings.indyApiServers[0]}${cmd}`
     console.log(`Indy indyFetchGet url: ${url}`)

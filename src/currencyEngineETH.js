@@ -21,7 +21,7 @@ import type {
 import { calcMiningFee } from './miningFees.js'
 import { sprintf } from 'sprintf-js'
 import { bns } from 'biggystring'
-import { NetworkFeesSchema, CustomTokenSchema, EthGasStationSchema } from './ethSchema.js'
+import { NetworkFeesSchema, CustomTokenSchema, EthGasStationSchema, EdgeSpendInfoSchema, CurrentyCodeSchema } from './ethSchema.js'
 import {
   DATA_STORE_FILE,
   DATA_STORE_FOLDER,
@@ -32,6 +32,7 @@ import {
 } from './ethTypes.js'
 import { isHex, normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex, padAddress, unpadAddress } from './ethUtils.js'
 import { ConnectionManager } from './ethConnections/connectionManager.js'
+import { ConnectionUtils } from './ethConnections/connectionUtils.js'
 
 const Buffer = require('buffer/').Buffer
 const abi = require('../lib/export-fixes-bundle.js').ABI
@@ -104,6 +105,7 @@ class EthereumEngine {
   walletId: string
   io: EdgeIo
   connectionManager: ConnectionManager
+  connectionUtils: ConnectionUtils
 
   constructor (io_: any, walletInfo: EdgeWalletInfo, opts: EdgeCurrencyEngineOptions) {
     // Validate that we are a valid EdgeCurrencyEngine:
@@ -125,6 +127,7 @@ class EthereumEngine {
     this.customTokens = []
     this.timers = {}
     this.connectionManager = new ConnectionManager(io_, false) // true for indy, false for etherscan
+    this.connectionUtils = new ConnectionUtils(io_)
 
     if (typeof opts.optionalSettings !== 'undefined') {
       this.currentSettings = opts.optionalSettings
@@ -163,44 +166,6 @@ class EthereumEngine {
   // *************************************
   // Private methods
   // *************************************
-  async fetchGetEtherscan (cmd: string) {
-    let apiKey = ''
-    if (global.etherscanApiKey && global.etherscanApiKey.length > 5) {
-      apiKey = '&apikey=' + global.etherscanApiKey
-    }
-    const url = sprintf('%s/api%s%s', this.currentSettings.otherSettings.etherscanApiServers[0], cmd, apiKey)
-    return this.fetchGet(url)
-  }
-
-  async fetchGet (url: string) {
-    const response = await this.io.fetch(url, {
-      method: 'GET'
-    })
-    if (!response.ok) {
-      const cleanUrl = url.replace(global.etherscanApiKey, 'private')
-      throw new Error(
-        `The server returned error code ${response.status} for ${cleanUrl}`
-      )
-    }
-    return response.json()
-  }
-
-  async fetchPostBlockcypher (cmd: string, body: any) {
-    let apiKey = ''
-    if (global.blockcypherApiKey && global.blockcypherApiKey.length > 5) {
-      apiKey = '&token=' + global.blockcypherApiKey
-    }
-    const url = sprintf('%s/%s%s', this.currentSettings.otherSettings.blockcypherApiServers[0], cmd, apiKey)
-    const response = await this.io.fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'POST',
-      body: JSON.stringify(body)
-    })
-    return response.json()
-  }
 
   // *************************************
   // Poll on the blockheight
@@ -312,7 +277,7 @@ class EthereumEngine {
       if (tx.from === this.walletLocalData.ethereumAddress) {
         netNativeAmount = bns.sub('0', tx.data)
         fromAddress = this.walletLocalData.ethereumAddress
-        toAddress = tx.to ? tx.to : tx.contractAddress
+        toAddress = tx.destination
       } else {
         fromAddress = tx.from
         toAddress = this.walletLocalData.ethereumAddress
@@ -754,7 +719,7 @@ class EthereumEngine {
   async checkUpdateNetworkFees () {
     try {
       const url = sprintf('%s/v1/networkFees/ETH', INFO_SERVERS[0])
-      const jsonObj = await this.fetchGet(url)
+      const jsonObj = await this.connectionUtils.fetchGet(url)
       const valid = validateObject(jsonObj, NetworkFeesSchema)
 
       if (valid) {
@@ -769,7 +734,7 @@ class EthereumEngine {
 
     try {
       const url = sprintf('https://www.ethgasstation.info/json/ethgasAPI.json')
-      const jsonObj = await this.fetchGet(url)
+      const jsonObj = await this.connectionUtils.fetchGet(url)
       const valid = validateObject(jsonObj, EthGasStationSchema)
 
       if (valid) {
@@ -1010,13 +975,7 @@ class EthereumEngine {
     let currencyCode = PRIMARY_CURRENCY
 
     if (typeof options !== 'undefined') {
-      const valid = validateObject(options, {
-        'type': 'object',
-        'properties': {
-          'currencyCode': {'type': 'string'}
-        }
-      })
-
+      const valid = validateObject(options, CurrentyCodeSchema)
       if (valid) {
         currencyCode = options.currencyCode
       }
@@ -1034,13 +993,7 @@ class EthereumEngine {
   getNumTransactions (options: any): number {
     let currencyCode = PRIMARY_CURRENCY
 
-    const valid = validateObject(options, {
-      'type': 'object',
-      'properties': {
-        'currencyCode': {'type': 'string'}
-      }
-    })
-
+    const valid = validateObject(options, CurrentyCodeSchema)
     if (valid) {
       currencyCode = options.currencyCode
     }
@@ -1056,13 +1009,7 @@ class EthereumEngine {
   async getTransactions (options: any) {
     let currencyCode:string = PRIMARY_CURRENCY
 
-    const valid:boolean = validateObject(options, {
-      'type': 'object',
-      'properties': {
-        'currencyCode': {'type': 'string'}
-      }
-    })
-
+    const valid:boolean = validateObject(options, CurrentyCodeSchema)
     if (valid) {
       currencyCode = options.currencyCode
     }
@@ -1132,31 +1079,7 @@ class EthereumEngine {
   // synchronous
   async makeSpend (edgeSpendInfo: EdgeSpendInfo) {
     // Validate the spendInfo
-    const valid = validateObject(edgeSpendInfo, {
-      'type': 'object',
-      'properties': {
-        'currencyCode': { 'type': 'string' },
-        'networkFeeOption': { 'type': 'string' },
-        'spendTargets': {
-          'type': 'array',
-          'items': {
-            'type': 'object',
-            'properties': {
-              'currencyCode': { 'type': 'string' },
-              'publicAddress': { 'type': 'string' },
-              'nativeAmount': { 'type': 'string' },
-              'destMetadata': { 'type': 'object' },
-              'destWallet': { 'type': 'object' }
-            },
-            'required': [
-              'publicAddress'
-            ]
-          }
-        }
-      },
-      'required': [ 'spendTargets' ]
-    })
-
+    const valid = validateObject(edgeSpendInfo, EdgeSpendInfoSchema)
     if (!valid) {
       throw (new Error('Error: invalid ABCSpendInfo'))
     }
@@ -1368,7 +1291,7 @@ class EthereumEngine {
 
     this.log(`Etherscan: sent transaction to network:\n${transactionParsed}\n`)
     const url = sprintf('?module=proxy&action=eth_sendRawTransaction&hex=%s', edgeTransaction.signedTx)
-    const jsonObj = await this.fetchGetEtherscan(url)
+    const jsonObj = await this.connectionUtils.etherscanFetchGet(url)
 
     this.log('broadcastEtherscan jsonObj:', jsonObj)
 
@@ -1405,7 +1328,7 @@ class EthereumEngine {
 
     const url = sprintf('v1/eth/main/txs/push')
     const hexTx = edgeTransaction.signedTx.replace('0x', '')
-    const jsonObj = await this.fetchPostBlockcypher(url, {tx: hexTx})
+    const jsonObj = await this.connectionUtils.fetchPostBlockcypher(url, {tx: hexTx})
 
     this.log('broadcastBlockCypher jsonObj:', jsonObj)
     if (typeof jsonObj.error !== 'undefined') {

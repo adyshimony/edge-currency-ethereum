@@ -276,3 +276,35 @@ export const EtherscanTokenTxSchema = {
   },
   'required': ['result']
 }
+
+export const EdgeSpendInfoSchema = {
+  'type': 'object',
+  'properties': {
+    'currencyCode': { 'type': 'string' },
+    'networkFeeOption': { 'type': 'string' },
+    'spendTargets': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'currencyCode': { 'type': 'string' },
+          'publicAddress': { 'type': 'string' },
+          'nativeAmount': { 'type': 'string' },
+          'destMetadata': { 'type': 'object' },
+          'destWallet': { 'type': 'object' }
+        },
+        'required': [
+          'publicAddress'
+        ]
+      }
+    }
+  },
+  'required': [ 'spendTargets' ]
+}
+
+export const CurrentyCodeSchema = {
+  'type': 'object',
+  'properties': {
+    'currencyCode': {'type': 'string'}
+  }
+}
