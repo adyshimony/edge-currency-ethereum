@@ -15,7 +15,7 @@ class ConnectionManager implements ConnectionFetch {
 
   constructor (io: EdgeIo, indy: boolean = true) {
     this.primaryConnection = indy ? new IndyConnectionFetch(io) : new ThirdPartyConnectionFetch(io)
-    this.secondaryConnection = !indy ? new ThirdPartyConnectionFetch(io) : new IndyConnectionFetch(io)
+    this.secondaryConnection = indy ? new ThirdPartyConnectionFetch(io) : new IndyConnectionFetch(io)
     this.useIndy = indy
   }
 
@@ -32,10 +32,13 @@ class ConnectionManager implements ConnectionFetch {
       }
       return resObj
     } catch (error) {
+      console.log('*******************************************')
+      console.log(error)
+      console.log('callConnectionGet error, going to secondary')
       try {
         const res = await this.secondaryConnection[getFunction](...args)
         const resObj = {
-          'connectionType': this.primaryConnection.connectionType(),
+          'connectionType': this.secondaryConnection.connectionType(),
           'result': res
         }
         return resObj
@@ -76,7 +79,14 @@ class ConnectionManager implements ConnectionFetch {
   async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
     // for now don't use indy until we found a way to get errors
     // const thirdPartyConnection = this.useIndy ? this.secondaryConnection : this.primaryConnection
-    return this.callConnectionGet('broadcastTransaction', edgeTransaction)
+    // return this.callConnectionGet('broadcastTransaction', edgeTransaction)
+    // force test indy
+    const res = await this.secondaryConnection.broadcastTransaction(edgeTransaction)
+    const resObj = {
+      'connectionType': this.secondaryConnection.connectionType(),
+      'result': res
+    }
+    return resObj
   }
 }
 

@@ -1280,7 +1280,9 @@ class EthereumEngine {
   }
   // asynchronous
   async broadcastTx (edgeTransaction: EdgeTransaction): Promise<EdgeTransaction> {
-    const { results, errors } = await this.connectionManager.broadcastTransaction(edgeTransaction)
+    const response = await this.connectionManager.broadcastTransaction(edgeTransaction)
+    const errors = response.result.errors
+    const results = response.result.results
 
     let allErrored = true
     for (const e of errors) {

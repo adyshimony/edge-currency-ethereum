@@ -54,7 +54,7 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
-    const response = await this.connection.indyFetchGet(`/mempool/sendtx${edgeTransaction.signedTx}`)
+    const response = await this.connection.indyFetchGet(`/mempool/sendtx/${edgeTransaction.signedTx}`)
 
     const result: BroadcastResults = {
       incrementNonce: false,

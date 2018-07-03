@@ -119,11 +119,11 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
     //     errors[i] = e
     //   }
     // }
-
-    return {
+    const respons = {
       'results': results,
       'errors': errors
     }
+    return respons
   }
 
   async broadcastEtherscan (edgeTransaction: EdgeTransaction): Promise<BroadcastResults> {
