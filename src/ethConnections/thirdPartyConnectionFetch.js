@@ -2,8 +2,8 @@
  * Created by adys on 06/13/18.
  * @flow
  */
-import type { EdgeIo } from 'edge-core-js'
-import type { ConnectionFetch } from '../ethTypes'
+import type { EdgeIo, EdgeTransaction } from 'edge-core-js'
+import type { ConnectionFetch, BroadcastResults } from '../ethTypes'
 import { ConnectionUtils } from './connectionUtils'
 import { otherSettings } from '../currencyInfoETH'
 import { validate } from 'jsonschema'
@@ -85,6 +85,120 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
   async getBlockTxs (block: string): Promise<any> {
     // TBD - just for compiling
     throw new Error('not implemented in etherscan')
+  }
+
+  async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
+    const results: Array<BroadcastResults | null> = [null, null]
+    const errors: Array<Error | null> = [null, null]
+
+    // Because etherscan will allow use of a nonce that's too high, only use it if Blockcypher fails
+    // If we can fix this or replace etherscan, then we can use an array of promises instead of await
+    // on each broadcast type
+    try {
+      results[0] = await this.broadcastBlockCypher(edgeTransaction)
+    } catch (e) {
+      errors[0] = e
+    }
+
+    if (errors[0]) {
+      try {
+        results[1] = await this.broadcastEtherscan(edgeTransaction)
+      } catch (e) {
+        errors[1] = e
+      }
+    }
+
+    // Use code below once we actually use a Promise array and simultaneously broadcast with a Promise.all()
+    //
+    // for (let i = 0; i < results.length; i++) {
+    //   results[i] = null
+    //   errors[i] = null
+    //   try {
+    //     results[i] = await results[i]
+    //   } catch (e) {
+    //     errors[i] = e
+    //   }
+    // }
+
+    return {
+      'results': results,
+      'errors': errors
+    }
+  }
+
+  async broadcastEtherscan (edgeTransaction: EdgeTransaction): Promise<BroadcastResults> {
+    const result: BroadcastResults = {
+      incrementNonce: false,
+      decrementNonce: false
+    }
+    const transactionParsed = JSON.stringify(edgeTransaction, null, 2)
+
+    console.log(`Etherscan: sent transaction to network:\n${transactionParsed}\n`)
+    const url = `?module=proxy&action=eth_sendRawTransaction&hex=${edgeTransaction.signedTx}`
+    const jsonObj = await this.connection.etherscanFetchGet(url)
+
+    console.log(`broadcastEtherscan jsonObj: ${jsonObj}`)
+
+    if (typeof jsonObj.error !== 'undefined') {
+      console.log('Error sending transaction')
+      if (
+        jsonObj.error.code === -32000 ||
+        jsonObj.error.message.includes('nonce is too low') ||
+        jsonObj.error.message.includes('nonce too low') ||
+        jsonObj.error.message.includes('incrementing the nonce') ||
+        jsonObj.error.message.includes('replacement transaction underpriced')
+      ) {
+        result.incrementNonce = true
+      } else {
+        throw (jsonObj.error)
+      }
+      return result
+    } else if (typeof jsonObj.result === 'string') {
+      // Success!!
+      return result
+    } else {
+      throw new Error('Invalid return value on transaction send')
+    }
+  }
+
+  async broadcastBlockCypher (edgeTransaction: EdgeTransaction): Promise<BroadcastResults> {
+    const result: BroadcastResults = {
+      incrementNonce: false,
+      decrementNonce: false
+    }
+
+    const transactionParsed = JSON.stringify(edgeTransaction, null, 2)
+    console.log(`Blockcypher: sent transaction to network:\n${transactionParsed}\n`)
+
+    const url = sprintf('v1/eth/main/txs/push')
+    const hexTx = edgeTransaction.signedTx.replace('0x', '')
+    const jsonObj = await this.connection.fetchPostBlockcypher(url, {tx: hexTx})
+
+    console.log(`broadcastBlockCypher jsonObj: ${jsonObj}`)
+    if (typeof jsonObj.error !== 'undefined') {
+      console.log('Error sending transaction')
+      if (
+        typeof jsonObj.error === 'string' &&
+        jsonObj.error.includes('Account nonce ') &&
+        jsonObj.error.includes('higher than transaction')
+      ) {
+        result.incrementNonce = true
+      } else if (
+        typeof jsonObj.error === 'string' &&
+        jsonObj.error.includes('Error validating transaction') &&
+        jsonObj.error.includes('orphaned, missing reference')
+      ) {
+        result.decrementNonce = true
+      } else {
+        throw (jsonObj.error)
+      }
+      return result
+    } else if (jsonObj.tx && typeof jsonObj.tx.hash === 'string') {
+      // Success!!
+      return result
+    } else {
+      throw new Error('Invalid return value on transaction send')
+    }
   }
 
   validateObject (object: any, schema: any) {

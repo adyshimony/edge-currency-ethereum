@@ -2,8 +2,8 @@
  * Created by adys on 06/13/2018.
  * @flow
  */
-import type { EdgeIo } from 'edge-core-js'
-import { ConnectionFetch } from '../ethTypes'
+import type { EdgeIo, EdgeTransaction } from 'edge-core-js'
+import type { ConnectionFetch, BroadcastResults } from '../ethTypes'
 import { ConnectionUtils } from './connectionUtils'
 
 class IndyConnectionFetch implements ConnectionFetch {
@@ -51,6 +51,22 @@ class IndyConnectionFetch implements ConnectionFetch {
 
   async getBlockTxs (block: string): Promise<Array<any>> {
     return this.fetch('block txs', '/mempool/block', block)
+  }
+
+  async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
+    const response = await this.connection.indyFetchGet(`/mempool/sendtx${edgeTransaction.signedTx}`)
+
+    const result: BroadcastResults = {
+      incrementNonce: false,
+      decrementNonce: false
+    }
+    if (!response.result) {
+      console.log('Error sending indy transaction')
+      if (response.message.includes('same hash was already imported')) {
+        result.incrementNonce = true
+      }
+    }
+    return result
   }
 }
 

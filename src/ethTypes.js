@@ -150,6 +150,13 @@ export interface ConnectionFetch {
   getTokenTxs(address: string, token: string, tartBlock: number, endBlock: number): Promise<any>;
   // get txs for a spefic block
   getBlockTxs(block: string): Promise<any>;
+  // broadcast transaction
+  broadcastTransaction(edgeTransaction: EdgeTransaction): Promise<any>;
   // rerun the current connection type derived from this interface
   connectionType(): string;
+}
+
+export type BroadcastResults = {
+  incrementNonce: boolean,
+  decrementNonce: boolean
 }

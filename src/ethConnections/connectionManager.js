@@ -3,7 +3,7 @@
  * @flow
  */
 
-import type { EdgeIo } from 'edge-core-js'
+import type { EdgeIo, EdgeTransaction } from 'edge-core-js'
 import { ConnectionFetch } from '../ethTypes'
 import { IndyConnectionFetch } from './indyConnectionFetch'
 import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
@@ -11,10 +11,12 @@ import { ThirdPartyConnectionFetch } from './thirdPartyConnectionFetch'
 class ConnectionManager implements ConnectionFetch {
   primaryConnection: any
   secondaryConnection: any
+  useIndy: boolean
 
   constructor (io: EdgeIo, indy: boolean = true) {
     this.primaryConnection = indy ? new IndyConnectionFetch(io) : new ThirdPartyConnectionFetch(io)
     this.secondaryConnection = !indy ? new ThirdPartyConnectionFetch(io) : new IndyConnectionFetch(io)
+    this.useIndy = indy
   }
 
   connectionType (): string {
@@ -69,6 +71,12 @@ class ConnectionManager implements ConnectionFetch {
 
   async getBlockTxs (block: string): Promise<any> {
     return this.callConnectionGet('getBlockTxs', block)
+  }
+
+  async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
+    // for now don't use indy until we found a way to get errors
+    // const thirdPartyConnection = this.useIndy ? this.secondaryConnection : this.primaryConnection
+    return this.callConnectionGet('broadcastTransaction', edgeTransaction)
   }
 }
 

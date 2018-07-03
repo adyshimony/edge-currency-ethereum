@@ -28,7 +28,8 @@ import {
   WalletLocalData,
   type EthCustomToken,
   type EthereumFeesGasPrice,
-  type EthereumFee
+  type EthereumFee,
+  type BroadcastResults
 } from './ethTypes.js'
 import { isHex, normalizeAddress, addHexPrefix, bufToHex, validateObject, toHex, padAddress, unpadAddress } from './ethUtils.js'
 import { ConnectionManager } from './ethConnections/connectionManager.js'
@@ -50,10 +51,6 @@ const PRIMARY_CURRENCY = currencyInfo.currencyCode
 const CHECK_UNCONFIRMED = true
 const INFO_SERVERS = ['https://info1.edgesecure.co:8444']
 
-type BroadcastResults = {
-  incrementNonce: boolean,
-  decrementNonce: boolean
-}
 class EthereumParams {
   from: Array<string>
   to: Array<string>
@@ -1281,118 +1278,11 @@ class EthereumEngine {
 
     return edgeTransaction
   }
-
-  async broadcastEtherscan (edgeTransaction: EdgeTransaction): Promise<BroadcastResults> {
-    const result: BroadcastResults = {
-      incrementNonce: false,
-      decrementNonce: false
-    }
-    const transactionParsed = JSON.stringify(edgeTransaction, null, 2)
-
-    this.log(`Etherscan: sent transaction to network:\n${transactionParsed}\n`)
-    const url = sprintf('?module=proxy&action=eth_sendRawTransaction&hex=%s', edgeTransaction.signedTx)
-    const jsonObj = await this.connectionUtils.etherscanFetchGet(url)
-
-    this.log('broadcastEtherscan jsonObj:', jsonObj)
-
-    if (typeof jsonObj.error !== 'undefined') {
-      this.log('Error sending transaction')
-      if (
-        jsonObj.error.code === -32000 ||
-        jsonObj.error.message.includes('nonce is too low') ||
-        jsonObj.error.message.includes('nonce too low') ||
-        jsonObj.error.message.includes('incrementing the nonce') ||
-        jsonObj.error.message.includes('replacement transaction underpriced')
-      ) {
-        result.incrementNonce = true
-      } else {
-        throw (jsonObj.error)
-      }
-      return result
-    } else if (typeof jsonObj.result === 'string') {
-      // Success!!
-      return result
-    } else {
-      throw new Error('Invalid return value on transaction send')
-    }
-  }
-
-  async broadcastBlockCypher (edgeTransaction: EdgeTransaction): Promise<BroadcastResults> {
-    const result: BroadcastResults = {
-      incrementNonce: false,
-      decrementNonce: false
-    }
-
-    const transactionParsed = JSON.stringify(edgeTransaction, null, 2)
-    this.log(`Blockcypher: sent transaction to network:\n${transactionParsed}\n`)
-
-    const url = sprintf('v1/eth/main/txs/push')
-    const hexTx = edgeTransaction.signedTx.replace('0x', '')
-    const jsonObj = await this.connectionUtils.fetchPostBlockcypher(url, {tx: hexTx})
-
-    this.log('broadcastBlockCypher jsonObj:', jsonObj)
-    if (typeof jsonObj.error !== 'undefined') {
-      this.log('Error sending transaction')
-      if (
-        typeof jsonObj.error === 'string' &&
-        jsonObj.error.includes('Account nonce ') &&
-        jsonObj.error.includes('higher than transaction')
-      ) {
-        result.incrementNonce = true
-      } else if (
-        typeof jsonObj.error === 'string' &&
-        jsonObj.error.includes('Error validating transaction') &&
-        jsonObj.error.includes('orphaned, missing reference')
-      ) {
-        result.decrementNonce = true
-      } else {
-        throw (jsonObj.error)
-      }
-      return result
-    } else if (jsonObj.tx && typeof jsonObj.tx.hash === 'string') {
-      // Success!!
-      return result
-    } else {
-      throw new Error('Invalid return value on transaction send')
-    }
-  }
-
   // asynchronous
   async broadcastTx (edgeTransaction: EdgeTransaction): Promise<EdgeTransaction> {
-    const results: Array<BroadcastResults | null> = [null, null]
-    const errors: Array<Error | null> = [null, null]
-
-    // Because etherscan will allow use of a nonce that's too high, only use it if Blockcypher fails
-    // If we can fix this or replace etherscan, then we can use an array of promises instead of await
-    // on each broadcast type
-    try {
-      results[0] = await this.broadcastBlockCypher(edgeTransaction)
-    } catch (e) {
-      errors[0] = e
-    }
-
-    if (errors[0]) {
-      try {
-        results[1] = await this.broadcastEtherscan(edgeTransaction)
-      } catch (e) {
-        errors[1] = e
-      }
-    }
-
-    // Use code below once we actually use a Promise array and simultaneously broadcast with a Promise.all()
-    //
-    // for (let i = 0; i < results.length; i++) {
-    //   results[i] = null
-    //   errors[i] = null
-    //   try {
-    //     results[i] = await results[i]
-    //   } catch (e) {
-    //     errors[i] = e
-    //   }
-    // }
+    const { results, errors } = await this.connectionManager.broadcastTransaction(edgeTransaction)
 
     let allErrored = true
-
     for (const e of errors) {
       if (!e) {
         allErrored = false
