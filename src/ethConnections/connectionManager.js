@@ -33,8 +33,9 @@ class ConnectionManager implements ConnectionFetch {
       return resObj
     } catch (error) {
       console.log('*******************************************')
+      console.log(`callConnectionGet ${getFunction}error, going to secondary`)
       console.log(error)
-      console.log('callConnectionGet error, going to secondary')
+      console.log('*******************************************')
       try {
         const res = await this.secondaryConnection[getFunction](...args)
         const resObj = {
@@ -77,16 +78,17 @@ class ConnectionManager implements ConnectionFetch {
   }
 
   async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
-    // for now don't use indy until we found a way to get errors
-    // const thirdPartyConnection = this.useIndy ? this.secondaryConnection : this.primaryConnection
-    // return this.callConnectionGet('broadcastTransaction', edgeTransaction)
-    // force test indy
-    const res = await this.secondaryConnection.broadcastTransaction(edgeTransaction)
-    const resObj = {
-      'connectionType': this.secondaryConnection.connectionType(),
-      'result': res
-    }
-    return resObj
+    // for now don't use indy until we test it good
+    const thirdPartyConnection = this.useIndy ? this.secondaryConnection : this.primaryConnection
+    return thirdPartyConnection.callConnectionGet('broadcastTransaction', edgeTransaction)
+
+    // force indy test
+    // const res = await this.secondaryConnection.broadcastTransaction(edgeTransaction)
+    // const resObj = {
+    //   'connectionType': this.secondaryConnection.connectionType(),
+    //   'result': res
+    // }
+    // return resObj
   }
 }
 

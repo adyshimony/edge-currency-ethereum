@@ -72,13 +72,9 @@ class ThirdPartyConnectionFetch implements ConnectionFetch {
 
   async getTokenTxs (address: string, token: string, startBlock: number, endBlock: number): Promise<any> {
     const tokenTransferTopicCode = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
-    const urlTest = sprintf('?module=logs&action=getLogs&fromBlock=%d&toBlock=latest&address=%s&topic0=0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef&topic0_1_opr=and&topic1=%s&topic1_2_opr=or&topic2=%s', startBlock, token, address, address)
+    // const url = sprintf('?module=logs&action=getLogs&fromBlock=%d&toBlock=latest&address=%s&topic0=0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef&topic0_1_opr=and&topic1=%s&topic1_2_opr=or&topic2=%s', startBlock, token, address, address)
     const url = `?module=logs&action=getLogs&fromBlock=${startBlock}&toBlock=latest&address=${token}&topic0=${tokenTransferTopicCode}&topic0_1_opr=and&topic1=${address}&topic1_2_opr=or&topic2=${address}`
-    if (!url.localeCompare(urlTest)) {
-      console.log('error in tx string')
-    } else {
-      console.log('OK tx string')
-    }
+
     return this.fetch('token txs', url, EtherscanTokenTxSchema)
   }
 

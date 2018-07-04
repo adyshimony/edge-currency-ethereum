@@ -26,7 +26,7 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async getAddressBalance (address: string): Promise<string> {
-    return this.fetch('address balance', '/account/balance/', address)
+    return this.fetch('address balance', '/account/balance', address)
   }
 
   async getTokenBalance (address: string, token: string): Promise<string> {
@@ -54,19 +54,31 @@ class IndyConnectionFetch implements ConnectionFetch {
   }
 
   async broadcastTransaction (edgeTransaction: EdgeTransaction): Promise<any> {
-    const response = await this.connection.indyFetchGet(`/mempool/sendtx/${edgeTransaction.signedTx}`)
+    const indyResponse = await this.connection.indyFetchGet(`/mempool/sendtx/${edgeTransaction.signedTx}`)
+
+    const results: Array<BroadcastResults | null> = [null, null]
+    const errors: Array<Error | null> = [null, null]
 
     const result: BroadcastResults = {
       incrementNonce: false,
       decrementNonce: false
     }
-    if (!response.result) {
+
+    if (!indyResponse.result) {
       console.log('Error sending indy transaction')
-      if (response.message.includes('same hash was already imported')) {
+      if (indyResponse.message.includes('same hash was already imported')) {
         result.incrementNonce = true
+        results[0] = result
+        errors[1] = new Error('same hash was already imported')
       }
     }
-    return result
+
+    const response = {
+      'results': results,
+      'errors': errors
+    }
+
+    return response
   }
 }
 
